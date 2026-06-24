@@ -1,0 +1,569 @@
+/* ─── Reset & Base Layout System ────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:       #111111;
+  --chalk:     #F9F9F9;
+  --red:       #E63946;
+  --yellow:    #FFB703;
+  --blue:      #0077B6;
+  --void:      #0A0A0A;
+  --slate:     #1A1A1A;
+  --gap:       5px;
+  --font-head: 'Syne', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  
+  /* Layout scale modifier parameter to stretch out the canvas matrix width significantly */
+  --grid-scale-factor: 1.0;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--void);
+}
+
+/* ─── Floating Action Control Layout ────────────────────────────── */
+#macro-toggle-btn {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999; /* Fixes visibility state above HUD layers */
+  background: var(--void);
+  color: var(--chalk);
+  border: 1px solid rgba(249, 249, 249, 0.2);
+  padding: 11px 18px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
+}
+
+
+#macro-toggle-btn:hover {
+  background: var(--chalk);
+  color: var(--ink);
+  border-color: var(--chalk);
+}
+
+/* ─── Canvas Root Viewport ───────────────────────────────────────── */
+#canvas-root {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  
+  /* Architectural deep 3D perspective setup space definitions */
+  perspective: 1500px;
+  perspective-origin: center center;
+}
+#canvas-root.dragging { cursor: grabbing; }
+
+#canvas-viewport {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+.tile {
+  position: absolute;
+  top: 0; left: 0;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+/* ─── Grid Cell Styling ──────────────────────────────────────────── */
+.cell {
+  position: absolute;
+  overflow: hidden;
+  background: var(--slate);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(10px, 1.5vw, 24px);
+  cursor: pointer;
+  transition: filter 0.2s ease;
+  transform-style: preserve-3d;
+}
+.cell:hover { filter: brightness(1.08); }
+
+.cell--ink    { background: var(--ink); }
+.cell--chalk  { background: var(--chalk); }
+.cell--red    { background: var(--red); }
+.cell--blue   { background: var(--blue); }
+.cell--yellow { background: var(--yellow); }
+.cell--empty  { background: transparent; justify-content: center; align-items: center; cursor: default; }
+
+/* ─── Macro Mosaic Asset Coordination Overlay Rules ────────────── */
+.cell-macro-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  
+  /* Smooth progressive tracking properties matching viewport easing timeline */
+  transition: opacity 1.35s cubic-bezier(0.76, 0, 0.24, 1),
+              filter 1.35s cubic-bezier(0.76, 0, 0.24, 1);
+              
+  /* Grayscale processing filter mapped into high-contrast specific brand color tints */
+  filter: grayscale(1) contrast(1.15) brightness(0.75) sepia(0.08);
+  background-blend-mode: multiply;
+  background-color: var(--slate);
+}
+
+/* Active visibility rule triggers globally when state modification rules run */
+#canvas-root.is-macro-view .cell-macro-overlay {
+  opacity: 1;
+}
+
+/* Hide inner structural caption typography when canvas shifts to macro view mode */
+#canvas-root.is-macro-view .cell__caption,
+#canvas-root.is-macro-view .cell__img-mock,
+#canvas-root.is-macro-view .cell__media,
+#canvas-root.is-macro-view .cell__meta {
+  opacity: 0 !important;
+  transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Captions and Imagery Components */
+.cell__caption {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.cell__tag { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.5; }
+.cell__title { font-family: var(--font-head); font-size: clamp(14px, 1.8vw, 26px); font-weight: 800; line-height: 1.1; margin-top: 8px; letter-spacing: -0.02em; }
+.cell__subtitle { font-family: var(--font-mono); font-size: clamp(9px, 0.9vw, 11px); opacity: 0.6; margin-top: 4px; line-height: 1.3; }
+
+.cell--ink .cell__tag, .cell--ink .cell__title { color: var(--chalk); }
+.cell--chalk .cell__tag, .cell--chalk .cell__title { color: var(--ink); }
+
+.cell__cta {
+  display: inline-block;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid currentColor;
+  opacity: 0.6;
+}
+
+.cell__img-mock {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.4s ease;
+}
+.cell__img-mock svg { width: 32px; height: 32px; fill: currentColor; }
+
+.cell__media {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  will-change: transform;
+  z-index: 1;
+  transition: opacity 0.4s ease;
+}
+
+/* ─── HUD Display Layer ─────────────────────────────────────────── */
+#hud {
+  position: absolute;
+  top: 24px; left: 24px;
+  z-index: 10;
+  font-family: var(--font-mono);
+  color: #fff;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: opacity 0.5s ease;
+}
+#canvas-root.is-macro-view #hud {
+  opacity: 0.15; /* Subtly dim peripheral HUD markers on macro canvas zooms */
+}
+#hud-coords { font-size: 11px; letter-spacing: 0.15em; font-weight: 700; }
+#hud-hint { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: #ffffff28; }
+#hud-counter { opacity: 0.5; font-size: 14px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL SYSTEM — Option C: Dynamic Hinge + 3D Perspective
+   ═══════════════════════════════════════════════════════════════════ */
+
+
+#modal-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  pointer-events: none;
+  visibility: hidden;
+  background: rgba(4, 4, 4, 0);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  transition:
+    background      0.5s  cubic-bezier(0.16, 1, 0.3, 1),
+    backdrop-filter 0.5s  cubic-bezier(0.16, 1, 0.3, 1),
+    visibility      0s    linear 0.55s;
+}
+
+#modal-stage.is-open {
+  pointer-events: auto;
+  visibility: visible;
+  background: rgba(4, 4, 4, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition:
+    background      0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    backdrop-filter 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility      0s   linear 0s;
+}
+
+/* ─── Modal Card ─────────────────────────────────────────────────── */
+#modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 1080px;
+  height: 78vh;
+  display: flex;
+  overflow: hidden;
+  background: var(--slate);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+/* ─── Hinge variants set by JS ───────────────────────────────────── */
+#modal-card.hinge-left {
+  transform-origin: left center;
+  transform: rotateY(90deg) scale(0.88);
+}
+
+#modal-card.hinge-right {
+  transform-origin: right center;
+  transform: rotateY(-90deg) scale(0.88);
+}
+
+/* ─── Open state ─────────────────────────────────────────────────── */
+#modal-stage.is-open #modal-card {
+  opacity: 1;
+}
+
+/* ─── Close button ───────────────────────────────────────────────── */
+#modal-close-trigger {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 20;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--chalk);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.25s ease;
+}
+#modal-close-trigger:hover {
+  background: rgba(230, 57, 70, 0.85);
+  transform: rotate(90deg);
+}
+#modal-close-trigger svg {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+/* ─── Media frame (left 55%) ─────────────────────────────────────── */
+#modal-media-frame {
+  flex: 1.2;
+  position: relative;
+  background: #0a0a0a;
+  overflow: hidden;
+}
+
+#modal-media-frame img,
+#modal-media-frame video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.modal-media-mock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.08;
+  color: var(--chalk);
+}
+.modal-media-mock svg {
+  width: 48px;
+  height: 48px;
+}
+
+/* ─── Content panel (right 45%) ──────────────────────────────────── */
+#modal-scroll-panel {
+  width: 380px;
+  flex: none;
+  background: #141414;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+#modal-scroll-panel::-webkit-scrollbar { width: 3px; }
+#modal-scroll-panel::-webkit-scrollbar-track { background: transparent; }
+#modal-scroll-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+
+/* ─── Panel interior ─────────────────────────────────────────────── */
+.modal-header {
+  padding: 36px 32px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.modal-header .story-tag {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 12px;
+}
+
+.modal-header .story-title {
+  font-family: var(--font-head);
+  font-size: clamp(20px, 2.4vw, 32px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--chalk);
+  margin-bottom: 8px;
+}
+
+.modal-header .story-subtitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+}
+
+/* ─── Body content ───────────────────────────────────────────────── */
+.modal-content-stream {
+  padding: 28px 32px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.story-body-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.65);
+}
+.story-body-text p { margin-bottom: 14px; }
+.story-body-text p:last-child { margin-bottom: 0; }
+
+/* ─── Utility bar ────────────────────────────────────────────────── */
+.modal-utility-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: auto;
+}
+
+.utility-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  padding: 7px 14px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.utility-btn:hover {
+  color: var(--chalk);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.utility-btn svg { width: 14px; height: 14px; }
+.utility-btn.liked { color: var(--red); border-color: var(--red); }
+.utility-btn.liked svg { fill: var(--red); stroke: var(--red); }
+
+/* ─── Comments ───────────────────────────────────────────────────── */
+.modal-comments-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 20px;
+}
+
+.comments-heading {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.25);
+  margin-bottom: 14px;
+}
+
+.comments-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comment-row {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.comment-author {
+  font-weight: 700;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-right: 8px;
+  letter-spacing: 0.08em;
+}
+
+/* ─── Staggered entrance for panel content ───────────────────────── */
+.modal-header,
+.modal-content-stream {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.32s ease, transform 0.32s ease;
+}
+
+#modal-stage.content-visible .modal-header {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.1s;
+}
+
+#modal-stage.content-visible .modal-content-stream {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.2s;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOBILE — bottom hinge (rotateX drawer)
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  #modal-stage {
+    padding: 0;
+    align-items: flex-end;
+    perspective-origin: center bottom;
+  }
+
+  #modal-card {
+    max-width: 100%;
+    height: 88vh;
+    flex-direction: column;
+    transform-origin: center bottom !important;
+    transform: rotateX(-90deg) scale(0.92) !important;
+    border-radius: 14px 14px 0 0;
+  }
+
+  #modal-stage.is-open #modal-card {
+    transform: rotateX(0deg) scale(1) !important;
+  }
+
+  #modal-media-frame {
+    flex: none;
+    height: 42%;
+    width: 100%;
+  }
+
+  #modal-scroll-panel {
+    width: 100%;
+    flex: 1;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .modal-header { padding: 24px 24px 18px; }
+  .modal-content-stream { padding: 20px 24px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PORTRAIT LAYER — Uncle Ho Mondrian Deconstruction
+   Lives at translateZ(-1800px) in the same 3D space as the grid.
+   Camera pulls back on macro mode to reveal it.
+   ═══════════════════════════════════════════════════════════════════ */
+
+#portrait-layer {
+  position: absolute;
+  /* Centered in viewport */
+  top: 50%;
+  left: 50%;
+  width: 100vw;
+  height: 100vh;
+  transform: translateZ(-1800px) translate(-50%, -50%);
+  transform-style: preserve-3d;
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr;
+  grid-template-rows: 2fr 2fr 1fr;
+  gap: 6px;
+  padding: 6px;
+  background: var(--ink);
+  /* Hidden from camera at normal Z — only visible when camera pulls back */
+  pointer-events: none;
+}

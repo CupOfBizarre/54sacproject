@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mondrian Canvas Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="infinite-canvas.css" />
+  <link rel="stylesheet" href="splash.css" />
+</head>
+<body>
+
+  <div id="splash-screen">
+    <div id="splash-halftone"></div>
+
+    <nav id="splash-nav">
+      <div class="splash-nav-group splash-nav-group--left">
+        <button class="splash-nav-btn">GALLERY</button>
+        <button class="splash-nav-btn">ARCHIVE</button>
+      </div>
+      <div class="splash-nav-group splash-nav-group--right">
+        <button class="splash-nav-btn">ABOUT</button>
+        <button class="splash-nav-btn">CONTACT</button>
+      </div>
+    </nav>
+
+    <div id="splash-stage">
+      <div id="splash-grid"></div>
+      <img id="splash-logo-full" src="logo-sac.png" alt="SAC Logo" />
+      <button id="splash-enter-btn">
+        <span class="sp-btn-text">ENTER GALLERY</span>
+        <span class="sp-btn-arrow">→</span>
+      </button>
+    </div>
+  </div>
+
+<!-- Replay SAC Splash Animation -->
+  <button id="macro-toggle-btn" aria-label="Replay SAC Animation">
+    <span class="btn-icon">[ ]</span>
+    <span class="btn-text">HOME</span>
+  </button>
+
+  <div id="canvas-root">
+    <div id="canvas-viewport">
+      <div class="tile" id="tile-0"></div>
+      <div class="tile" id="tile-1"></div>
+      <div class="tile" id="tile-2"></div>
+      <div class="tile" id="tile-3"></div>
+      <div class="tile" id="tile-4"></div>
+      <div class="tile" id="tile-5"></div>
+      <div class="tile" id="tile-6"></div>
+      <div class="tile" id="tile-7"></div>
+      <div class="tile" id="tile-8"></div>
+    </div>
+
+    <div id="hud">
+      <div id="hud-mode">MODE // ART GALLERY</div>
+      <div id="hud-coords">00°N / 00°E</div>
+      <div id="hud-hint">drag to explore canvas matrix</div>
+    </div>
+  </div>
+
+  <div id="modal-stage">
+    <div id="modal-card">
+
+      <div id="modal-media-frame">
+        </div>
+
+      <div id="modal-scroll-panel">
+        <button id="modal-close-trigger" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+
+        <div class="modal-header">
+          <span id="modal-story-tag"      class="story-tag"></span>
+          <h2   id="modal-story-title"    class="story-title"></h2>
+          <p    id="modal-story-subtitle" class="story-subtitle"></p>
+        </div>
+
+        <div class="modal-content-stream">
+          <div id="modal-story-body" class="story-body-text"></div>
+
+          <div class="modal-utility-bar">
+            <button class="utility-btn" id="modal-like-button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06
+                         a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78
+                         1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+              <span id="modal-likes-counter">0 Signatures</span>
+            </button>
+            <button class="utility-btn" id="modal-share-button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                <polyline points="16 6 12 2 8 6"/>
+                <line x1="12" y1="2" x2="12" y2="15"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="modal-comments-section">
+            <h3 class="comments-heading">Internal Comments</h3>
+            <div class="comments-stream">
+              <div class="comment-row">
+                <span class="comment-author">ARCHIVE.01</span>
+                Stunning preservation layout matrix structure.
+              </div>
+              <div class="comment-row">
+                <span class="comment-author">VECTOR_M</span>
+                Is this coordinate reference point anchored dynamically?
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="splash.js"></script>
+  <script src="infinite-canvas2.js"></script>
+</body>
+</html>
