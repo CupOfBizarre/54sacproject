@@ -7,7 +7,7 @@
 
 /* ─── 1. Story Dataset (50 entries) ─────────────────────────────── */
 const STORIES = [
-  { id:  1, title: "The Endless Highway",       subtitle: "Infrastructure & Memory",       type: "image", src: "https://images.unsplash.com/photo-1542241647-9cbb2225278b?auto=format&fit=crop&w=1200&q=80", aspect: "16:9", colorClass: "cell--ink",    tag: "Visual Essay · 001",
+  { id:  1, title: "The Endless Highway",       subtitle: "Infrastructure & Memory",       type: "image", src: "https://upload.wikimedia.org/wikipedia/commons/8/88/Urbex-ppc-030_%28Unsplash%29.jpg", aspect: "16:9", colorClass: "cell--ink",    tag: "Visual Essay · 001",
     content: "<p>The highway stretches into an infinite horizon — a snapshot of structural isolation where concrete architectures serve as conduits for collective memory. As we travel down these lines, localized frequencies begin to fade.</p><p>Infrastructure, we forget, is autobiography. The interstate was drawn not just over geography but over communities — it encoded desire, erasure, and ambition simultaneously.</p>" },
 
   { id:  2, title: "Portraits of Light",         subtitle: "Shadow Studies",                type: "image", src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80",  aspect: "4:5",  colorClass: "cell--blue",   tag: "Photography · 002",
@@ -95,7 +95,7 @@ const STORIES = [
 
   { id: 31, title: "[ 51°N / 0°W ]",             subtitle: "",                              type: "empty", src: "",                                                                                               aspect: "1:1",  colorClass: "cell--empty",  tag: "§ 031" },
 
-  { id: 32, title: "Seismic Notation",           subtitle: "Reading the Ground",            type: "image", src: "https://images.unsplash.com/photo-1561473406-5ef4f8a5f7e4?auto=format&fit=crop&w=800&q=80",  aspect: "4:5",  colorClass: "cell--chalk",  tag: "Geophysics · 032",
+  { id: 32, title: "Seismic Notation",           subtitle: "Reading the Ground",            type: "image", src: "https://captainfi.com/wp-content/uploads/2022/08/Unsplash-images-2-1024x683.jpg",  aspect: "4:5",  colorClass: "cell--chalk",  tag: "Geophysics · 032",
     content: "<p>The seismograph doesn't measure earthquakes. It measures the movement of the ground relative to a suspended mass — a pendulum that doesn't want to move, hung inside a frame that does. The earthquake is inferred from the difference.</p><p>Every recording contains noise — ocean waves, traffic, the footsteps of people in the building — and signal. Separating them is the work.</p>" },
 
   { id: 33, title: "Typeface Zero",              subtitle: "Before Gutenberg",              type: "text",  src: "",                                                                                               aspect: "2:1",  colorClass: "cell--red",    tag: "Type History · 033",
@@ -175,12 +175,39 @@ function textIconSVG() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="14" y2="15"/><line x1="10" y1="21" x2="10" y2="3"/></svg>`;
 }
 
-/* ─── 4. Geometric Layout Packer ────────────────────────────────── */
+/* ─── 4. Geometric Layout Packer (Skyline algorithm) ─────────────
+   Finds the lowest available row for each cell by scanning every
+   possible column position, rather than marching forward only.
+   This is what makes the Mondrian grid pack tightly — a small 1×1
+   cell that comes later in the dataset can still fill a gap left
+   behind by a taller neighbour earlier in the row, instead of being
+   forced to start a brand new row underneath everything.            */
 function buildDynamicLayout(unitW) {
   const packed = [];
-  let currentColumn = 0;
-  let currentRow = 0;
+  // columnHeights[c] = the next free row index in column c
   const columnHeights = new Array(GRID_COLS).fill(0);
+
+  function findBestSlot(colSpan, rowSpan) {
+    let bestCol = 0;
+    let bestRow = Infinity;
+
+    // Scan every possible starting column, find the row at which
+    // this span would actually sit (limited by its tallest blocking
+    // column), then keep whichever option gives the LOWEST row —
+    // i.e. the slot that lets this cell sit as high up as possible.
+    for (let col = 0; col <= GRID_COLS - colSpan; col++) {
+      let rowForThisCol = 0;
+      for (let c = col; c < col + colSpan; c++) {
+        rowForThisCol = Math.max(rowForThisCol, columnHeights[c]);
+      }
+      if (rowForThisCol < bestRow) {
+        bestRow = rowForThisCol;
+        bestCol = col;
+      }
+    }
+
+    return { col: bestCol, row: bestRow };
+  }
 
   STORIES.forEach((story) => {
     let colSpan = 1;
@@ -193,34 +220,18 @@ function buildDynamicLayout(unitW) {
 
     if (story.type === "empty") { colSpan = 1; rowSpan = 1; }
 
-    let fitFound = false;
-    let safetyBreak = 0;
-    while (!fitFound && safetyBreak < 200) {
-      safetyBreak++;
-      if (currentColumn + colSpan > GRID_COLS) {
-        currentColumn = 0;
-        currentRow++;
-      }
+    const { col, row } = findBestSlot(colSpan, rowSpan);
 
-      let conflict = false;
-      for (let c = currentColumn; c < currentColumn + colSpan; c++) {
-        if (columnHeights[c] > currentRow) { conflict = true; break; }
-      }
-
-      if (!conflict) { fitFound = true; } else { currentColumn++; }
-    }
-
-    const posX = currentColumn * (unitW + GAP);
-    const posY = currentRow * (unitW + GAP);
+    const posX = col * (unitW + GAP);
+    const posY = row * (unitW + GAP);
     const cellW = colSpan * unitW + (colSpan - 1) * GAP;
     const cellH = rowSpan * unitW + (rowSpan - 1) * GAP;
 
     packed.push({ story, x: posX, y: posY, w: cellW, h: cellH });
 
-    for (let c = currentColumn; c < currentColumn + colSpan; c++) {
-      columnHeights[c] = currentRow + rowSpan;
+    for (let c = col; c < col + colSpan; c++) {
+      columnHeights[c] = row + rowSpan;
     }
-    currentColumn += colSpan;
   });
 
   const maxColumnRowHeight = Math.max(...columnHeights);
@@ -409,7 +420,7 @@ function openStoryModal(story, cellEl) {
   mediaContainer.style.opacity = '0';
   card.style.opacity = '0';
 
-  // §3 Make modal layout-present but visually invisible so we can measure
+  // §3 Make modal layout-present but visually invisible
   modalOverlay.style.cssText = `
     visibility: visible;
     pointer-events: none;
@@ -420,11 +431,27 @@ function openStoryModal(story, cellEl) {
     display: flex;
   `;
 
-  // §4 Two rAF — guarantees full layout pass before measuring modal
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    const cardRect  = card.getBoundingClientRect();
+  // CRITICAL FIX FOR MOBILE: Temporarily flatten the 3D transform 
+  // so we measure the true, final resting dimensions of the media frame.
+  card.style.setProperty('transform', 'none', 'important');
+  card.style.setProperty('transition', 'none', 'important');
+  modalOverlay.classList.add('is-open');
 
-    // §5 Build clone at cell position — correct origin, no inverse needed
+  // §4 Two rAF — guarantees full layout pass with the flattened state
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    // Measure the true final layout geometry
+    const targetRect = mediaContainer.getBoundingClientRect();
+
+    // Reset the card back to its initial tilted state immediately 
+    // so it can transition normally alongside the clone
+    modalOverlay.classList.remove('is-open');
+    card.style.transform = '';
+    card.style.transition = '';
+    
+    // Force a single synthetic reflow to lock the initial tilt state back in
+    card.getBoundingClientRect();
+
+    // §5 Build clone at cell position
     const existingClone = document.getElementById('flip-clone');
     if (existingClone) existingClone.remove();
 
@@ -441,14 +468,12 @@ function openStoryModal(story, cellEl) {
       overflow: hidden;
       z-index: 9999;
       pointer-events: none;
-      transform-origin: top left;
     `;
 
     if (story.src) {
       const img = document.createElement('img');
       img.src = story.src;
       img.draggable = false;
-      // object-fit:cover handles the reframe — no counter-scale needed
       img.style.cssText = `
         position: absolute; inset: 0;
         width: 100%; height: 100%;
@@ -460,22 +485,26 @@ function openStoryModal(story, cellEl) {
 
     document.body.appendChild(clone);
 
-    // §6 Force reflow so initial position is committed before transition
+    // §6 Force reflow for clone positioning
     clone.getBoundingClientRect();
 
-    // §7 Compute delta from cell top-left to card top-left
-    const dX = cardRect.left - cellRect.left;
-    const dY = cardRect.top  - cellRect.top;
-    const dW = cardRect.width  / cellRect.width;
-    const dH = cardRect.height / cellRect.height;
+    // §7 & §8 Morph seamlessly to the true un-warped target layout coordinates
+    clone.style.willChange = 'left, top, width, height';
+    clone.style.transition = `
+      left 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+      top 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+      width 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+      height 0.9s cubic-bezier(0.16, 1, 0.3, 1)
+    `;
+    
+    clone.style.left   = `${targetRect.left}px`;
+    clone.style.top    = `${targetRect.top}px`;
+    clone.style.width  = `${targetRect.width}px`;
+    clone.style.height = `${targetRect.height}px`;
 
-    // §8 Animate clone from cell → card position+size
-    clone.style.willChange = 'transform';
-    clone.style.transition = 'transform 0.58s cubic-bezier(0.16, 1, 0.3, 1)';
-    clone.style.transform  = `translate3d(${dX}px, ${dY}px, 0) scale(${dW}, ${dH})`;
+    // Fire the CSS transforms entry animations now
+    modalOverlay.classList.add('is-open');
 
-    // §9 Fade backdrop in simultaneously — purely CSS transition, no inline fighting
-    // Small rAF delay so transition registers
     requestAnimationFrame(() => {
       modalOverlay.style.cssText = `
         visibility: visible;
@@ -489,7 +518,7 @@ function openStoryModal(story, cellEl) {
       `;
     });
 
-    // §10 When clone lands — swap to real card
+    // §10 Swap clone out for real structural card view components
     let settled = false;
     function onOpenDone() {
       if (settled) return;
@@ -498,14 +527,12 @@ function openStoryModal(story, cellEl) {
       clone.style.willChange = '';
       clone.remove();
 
-      // Reveal real card with short fade — no jump
       card.style.transition = 'opacity 0.2s ease';
       card.style.opacity    = '1';
 
       mediaContainer.style.transition = 'opacity 0.2s ease';
       mediaContainer.style.opacity    = '1';
 
-      // Stagger content panel in
       modalOverlay.classList.add('content-visible');
       modalOverlay.style.pointerEvents = 'auto';
 
@@ -513,10 +540,9 @@ function openStoryModal(story, cellEl) {
     }
 
     clone.addEventListener('transitionend', (e) => {
-      if (e.propertyName === 'transform') onOpenDone();
+      if (e.propertyName === 'width') onOpenDone();
     }, { once: true });
 
-    // Fallback — never leave in broken state
     setTimeout(onOpenDone, 680);
   }));
 }
@@ -532,28 +558,29 @@ function closeStoryModal() {
   const mediaContainer = document.getElementById('modal-media-frame');
   const card           = document.getElementById('modal-card');
 
-  // §1 Capture positions BEFORE any DOM change
-  const cardRect = card.getBoundingClientRect();
-  const cellRect = activeCellEl.getBoundingClientRect();
+  // §1 Capture real-time dimensions of the active open media viewport and destination cell
+  const targetRect = mediaContainer.getBoundingClientRect();
+  const cellRect   = activeCellEl.getBoundingClientRect();
 
-  // §2 Immediately hide card and content — clone takes over visually
+  // §2 Immediately hide the real card layout and clear state classes to initiate mobile CSS slide-down
   card.style.transition  = 'none';
   card.style.opacity     = '0';
   mediaContainer.style.opacity = '0';
   modalOverlay.classList.remove('content-visible');
+  modalOverlay.classList.remove('is-open');
   modalOverlay.style.pointerEvents = 'none';
 
-  // §3 Fade backdrop out
+  // §3 Smoothly fade out the backdrop blurring overlay
   modalOverlay.style.transition = `
-    background 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    backdrop-filter 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    visibility 0s linear 0.65s
+    background 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    backdrop-filter 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s linear 0.95s
   `;
   modalOverlay.style.background = 'rgba(4,4,4,0)';
   modalOverlay.style.backdropFilter = 'blur(0px)';
   modalOverlay.style.webkitBackdropFilter = 'blur(0px)';
 
-  // §4 Build clone at card position — starts full size, flies back to cell
+  // §4 Build the canvas morphing clone starting at the open media container's bounds
   const existingClone = document.getElementById('flip-clone');
   if (existingClone) existingClone.remove();
 
@@ -562,16 +589,15 @@ function closeStoryModal() {
   clone.id = 'flip-clone';
   clone.style.cssText = `
     position: fixed;
-    left: ${cardRect.left}px;
-    top: ${cardRect.top}px;
-    width: ${cardRect.width}px;
-    height: ${cardRect.height}px;
+    left: ${targetRect.left}px;
+    top: ${targetRect.top}px;
+    width: ${targetRect.width}px;
+    height: ${targetRect.height}px;
     background: ${cellBg};
     overflow: hidden;
     z-index: 9999;
     pointer-events: none;
-    transform-origin: top left;
-    will-change: transform;
+    will-change: left, top, width, height, opacity;
   `;
 
   if (activeStory.src) {
@@ -589,39 +615,34 @@ function closeStoryModal() {
 
   document.body.appendChild(clone);
 
-  // §5 Force reflow
+  // Force layout engine recalculation pass
   clone.getBoundingClientRect();
 
-  // §6 Compute delta from card top-left → cell top-left
-  const dX = cellRect.left - cardRect.left;
-  const dY = cellRect.top  - cardRect.top;
-  const dW = cellRect.width  / cardRect.width;
-  const dH = cellRect.height / cardRect.height;
-
-  // §7 Animate clone from card → cell
+  // §5 Transition dimensions and positions smoothly back into the native grid row/column matrix
   clone.style.transition = `
-    transform 0.52s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity   0.3s  ease 0.18s
+    left 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    top 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease 0.18s
   `;
-  clone.style.transform = `translate3d(${dX}px, ${dY}px, 0) scale(${dW}, ${dH})`;
-  clone.style.opacity   = '0';
+  clone.style.left    = `${cellRect.left}px`;
+  clone.style.top     = `${cellRect.top}px`;
+  clone.style.width   = `${cellRect.width}px`;
+  clone.style.height  = `${cellRect.height}px`;
+  clone.style.opacity = '0';
 
-  // Capture before async cleanup nulls them
-  const capturedCell    = activeCellEl;
-
+  const capturedCell = activeCellEl;
   let settled = false;
+
   function onCloseDone() {
     if (settled) return;
     settled = true;
 
-    clone.style.willChange = '';
     clone.remove();
-
-    // Cell was never dimmed — nothing to restore on opacity
-    // Just ensure no leftover inline style from any prior session
     capturedCell.style.opacity = '';
 
-    // Reset modal to fully hidden state for next open
+    // Reset overlay layout back to standard hidden base state
     modalOverlay.style.cssText = `
       display: flex;
       visibility: hidden;
@@ -631,19 +652,26 @@ function closeStoryModal() {
       transition: none;
     `;
 
+    // Completely scrub custom inline style attributes to keep DOM pristine
     card.style.cssText = '';
     mediaContainer.style.cssText = '';
     mediaContainer.innerHTML = '';
+
+    // Cleanly clear away the temporary !important properties we injected during measurement
+    card.style.removeProperty('transform');
+    card.style.removeProperty('transition');
 
     activeStory      = null;
     activeCellEl     = null;
     isAnimatingModal = false;
   }
 
+  // Listen to 'opacity' or 'top' transitions (on mobile, width might be matching, which bypasses width events)
   clone.addEventListener('transitionend', (e) => {
-    if (e.propertyName === 'transform') onCloseDone();
+    if (e.propertyName === 'opacity' || e.propertyName === 'top') onCloseDone();
   }, { once: true });
 
+  // Ultimate fallback execution boundary
   setTimeout(onCloseDone, 620);
 }
 /* ─── 9. Pointer Interaction Layer ─────────────────────────────── */
