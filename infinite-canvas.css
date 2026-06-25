@@ -10,7 +10,7 @@
   --void:      #0A0A0A;
   --slate:     #1A1A1A;
   --gap:       5px;
-  --font-head: 'Syne', sans-serif;
+  --font-head: 'Space Grotesk', sans-serif;
   --font-mono: 'Space Mono', monospace;
   
   /* Layout scale modifier parameter to stretch out the canvas matrix width significantly */
