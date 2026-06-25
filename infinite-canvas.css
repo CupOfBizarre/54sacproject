@@ -197,6 +197,21 @@ html, body {
   z-index: 1;
   transition: opacity 0.4s ease;
 }
+/* Ensure containers act as crisp masking viewports */
+.cell-thumbnail-wrapper, 
+#modal-media-frame {
+  overflow: hidden;
+  position: relative;
+}
+
+/* Ensure images always try to cover their bounds cleanly */
+.cell-thumbnail-wrapper img, 
+#modal-media-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; 
+  transform-origin: top left; /* Keeps alignment synchronized with FLIP calculations */
+}
 
 /* ─── HUD Display Layer ─────────────────────────────────────────── */
 #hud {
@@ -506,43 +521,51 @@ html, body {
 /* ═══════════════════════════════════════════════════════════════════
    MOBILE — bottom hinge (rotateX drawer)
    ═══════════════════════════════════════════════════════════════════ */
-@media (max-width: 767px) {
+@media (max-width: 768px) {
+  /* Ensure the stage layout centers its child properly on mobile */
   #modal-stage {
-    padding: 0;
-    align-items: flex-end;
-    perspective-origin: center bottom;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
   }
 
   #modal-card {
     max-width: 100%;
-    height: 88vh;
+    width: 100%;
+    height: 80vh; /* Leave room around the edges so it feels floating */
     flex-direction: column;
-    transform-origin: center bottom !important;
-    transform: rotateX(-90deg) scale(0.92) !important;
-    border-radius: 14px 14px 0 0;
+    
+    /* Change origin to center to avoid the bottom hinge drop out */
+    transform-origin: center center !important;
+    /* Use a clean scale and fade or subtle slide instead of 3D rotation */
+    transform: scale(0.9) translateY(20px) !important;
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+    border-radius: 12px; /* Uniform rounded corners for centered card */
   }
 
+  /* When open, reset to normal state centered on screen */
   #modal-stage.is-open #modal-card {
-    transform: rotateX(0deg) scale(1) !important;
+    transform: scale(1) translateY(0) !important;
+    opacity: 1 !important;
+  }
+  :root {
+    /* Blow up the item layout sizes so fewer items fit horizontally */
+    --grid-scale-factor: 1.6; 
+    --gap: 8px; /* Slightly wider gaps for readability on small viewports */
   }
 
-  #modal-media-frame {
-    flex: none;
-    height: 42%;
-    width: 100%;
+  /* Adjust the main 3D camera container to pull view closer */
+  #canvas-root {
+    perspective: 800px !important; /* Shorter perspective brings objects forward */
   }
-
-  #modal-scroll-panel {
-    width: 100%;
-    flex: 1;
-    border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  
+  /* If your engine uses a master camera movement group, we can shift it closer */
+  .camera-group {
+    transform: translateZ(200px); /* Physically pushes the grid forward toward screen */
   }
-
-  .modal-header { padding: 24px 24px 18px; }
-  .modal-content-stream { padding: 20px 24px; }
 }
-
 /* ═══════════════════════════════════════════════════════════════════
    PORTRAIT LAYER — Uncle Ho Mondrian Deconstruction
    Lives at translateZ(-1800px) in the same 3D space as the grid.
