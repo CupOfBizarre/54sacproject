@@ -1,0 +1,38 @@
+/* base.css — reset + the colour system used by EVERY page of the site.
+   One palette, two neutral families, six accent "threads" (thổ cẩm). Nothing else in the project
+   should hard-code a colour: use these tokens (CSS) or palette.js (JS). To retune the whole site,
+   change the values here.
+
+   Neutrals — paper (giấy dó / silk) for the light surfaces: intro, map, story panel;
+              night (chàm, indigo dye) for the dark ones: gallery room, menu.
+   Accents  — teal · mint · sky · indigo · coral · sand, shared by the map regions, the woven bands,
+              the menu, the thread strip and the placeholder tints. */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* neutrals: light */
+  --paper:    #F4EFE4;   --paper-hi: #FBF8F2;   --paper-2: #E9E2D2;   --paper-3: #D8CFBB;
+  /* neutrals: ink and dark */
+  --ink:      #123A4A;   --ink-soft: #5B7580;
+  --night-0:  #030D12;   --night-1:  #06181E;   --night-2: #0B2A30;
+  /* accent threads */
+  --teal:     #1F8A84;   --mint:  #8CC9B8;   --sky:  #5B9BD0;
+  --indigo:   #2C5F8A;   --coral: #E8806A;   --sand: #C9A35E;
+
+  /* the same colours as r,g,b — for translucent uses: rgba(var(--paper-rgb), .5) */
+  --paper-rgb: 244, 239, 228;   --ink-rgb: 18, 58, 74;
+  --night-rgb: 3, 13, 18;       --night-2-rgb: 11, 42, 48;
+  --mint-rgb: 140, 201, 184;    --teal-rgb: 31, 138, 132;
+
+  /* aliases kept for older rules */
+  --chalk: var(--paper);   --void: var(--night-0);
+
+  --font-head: 'Be Vietnam Pro', 'Space Grotesk', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--night-0);
+}

@@ -3,37 +3,66 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#030D12" />
   <title>SẮC</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="infinite-canvas.css" />
+  <link rel="stylesheet" href="base.css" />
+  <script src="palette.js"></script>
   <link rel="stylesheet" href="splash.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="map.css" />
+  <link rel="stylesheet" href="stream/stream.css" />
+  <link rel="stylesheet" href="menu.css" />
+  <script defer src="map.js"></script>
 </head>
 <body>
 
   <div id="splash-screen">
     <div id="splash-halftone"></div>
 
-    <nav id="splash-nav">
-      <div class="splash-nav-group splash-nav-group--left">
-        <button class="splash-nav-btn">GALLERY</button>
-        <button class="splash-nav-btn">ARCHIVE</button>
-      </div>
-      <div class="splash-nav-group splash-nav-group--right">
-        <button class="splash-nav-btn">ABOUT</button>
-        <button class="splash-nav-btn">CONTACT</button>
-      </div>
-    </nav>
-
     <div id="splash-stage">
       <div id="splash-grid"></div>
       <img id="splash-logo-full" src="logo-sac.png" alt="SAC Logo" />
-      <button id="splash-enter-btn">
-        <span class="sp-btn-text">ENTER GALLERY</span>
-        <span class="sp-btn-arrow">→</span>
-      </button>
+    </div>
+
+    <!-- #map view: interactive map of Vietnam's regions and ethnic groups (see map.js) -->
+    <section id="map-view" aria-label="Bản đồ các dân tộc Việt Nam">
+      <button id="map-menu-btn" type="button" aria-label="Mở menu"><i></i><span>MENU</span></button>
+      <div id="map-desc">
+        <p class="lab">Bản đồ · 54 dân tộc</p>
+        <p>Bản đồ tương tác các vùng dân tộc Việt Nam. Di chuột để nghiêng bản đồ, chọn một vùng để xem các dân tộc sinh sống.</p>
+        <button id="map-back" type="button">← Giới thiệu</button>
+      </div>
+      <div id="m-scene"><div id="m-stage"></div></div>
+      <div id="m-tip"></div>
+      <div id="m-chips"></div>
+      <aside id="m-card" aria-live="polite">
+        <button id="m-x" type="button" aria-label="Đóng">×</button>
+        <div class="hero" id="m-hero"></div>
+        <div class="in">
+          <h2 id="m-ct"></h2><div class="meta" id="m-cm"></div><p id="m-cb"></p>
+          <div id="m-gs"></div><div id="m-gd"></div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Menu: opens when the SẮC logo is clicked (menu.js) -->
+    <div id="sac-menu" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Menu">
+      <div id="sac-veil"></div>
+      <div id="sac-lattice"></div>
+      <div id="sac-rail"></div>
+      <button id="sac-close" type="button" aria-label="Đóng menu"><span>×</span></button>
+      <ul id="sac-list">
+        <li style="--i:0;--c:var(--coral)"><button class="sac-item" type="button" data-act="gallery"><span class="sac-idx">01</span><span class="sac-name">Gallery</span><span class="sac-sub">Thư viện</span></button><i class="sac-band"></i></li>
+        <li style="--i:1;--c:var(--sky)"><button class="sac-item" type="button" data-act="map"><span class="sac-idx">02</span><span class="sac-name">Map</span><span class="sac-sub">Bản đồ các dân tộc</span></button><i class="sac-band"></i></li>
+        <li style="--i:2;--c:var(--sand)"><button class="sac-item" type="button" data-act="archive" data-soon><span class="sac-idx">03</span><span class="sac-name">Archive</span><span class="sac-sub">Lưu trữ <em class="sac-soon">Sắp ra mắt</em></span></button><i class="sac-band"></i></li>
+        <li style="--i:3;--c:var(--mint)"><button class="sac-item" type="button" data-act="about" data-soon><span class="sac-idx">04</span><span class="sac-name">About</span><span class="sac-sub">Về chúng tôi <em class="sac-soon">Sắp ra mắt</em></span></button><i class="sac-band"></i></li>
+        <li style="--i:4;--c:var(--teal)"><button class="sac-item" type="button" data-act="contact" data-soon><span class="sac-idx">05</span><span class="sac-name">Contact</span><span class="sac-sub">Liên hệ <em class="sac-soon">Sắp ra mắt</em></span></button><i class="sac-band"></i></li>
+      </ul>
+      <p id="sac-foot">SẮC · 54 dân tộc · một dải thổ cẩm</p>
     </div>
   </div>
 
@@ -43,80 +72,49 @@
     <span class="btn-text">HOME</span>
   </button>
 
-  <div id="canvas-root">
-    <div id="canvas-viewport">
-      <div class="tile" id="tile-0"></div>
-      <div class="tile" id="tile-1"></div>
-      <div class="tile" id="tile-2"></div>
-      <div class="tile" id="tile-3"></div>
-      <div class="tile" id="tile-4"></div>
-      <div class="tile" id="tile-5"></div>
-      <div class="tile" id="tile-6"></div>
-      <div class="tile" id="tile-7"></div>
-      <div class="tile" id="tile-8"></div>
-    </div>
+  <div id="canvas-root"><!-- stream/main.js builds the gallery here --></div>
 
-    <div id="hud">
-      <div id="hud-mode">MODE // ART GALLERY</div>
-      <div id="hud-coords">00°N / 00°E</div>
-      <div id="hud-hint">drag to explore canvas matrix</div>
-    </div>
-  </div>
-
-  <div id="modal-stage">
-    <div id="modal-card">
-
-      <div id="modal-media-frame">
+  <!-- Story viewer (stream/viewer.js): thổ cẩm brocade design -->
+  <div id="viewer" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Story">
+    <div id="v-scrim"></div>
+    <div id="v-stage"></div>
+    <div id="v-frame"><i></i><i></i><i></i><i></i></div>
+    <img id="v-img" alt="" draggable="false" />
+    <aside id="v-panel">
+      <div class="v-band" id="v-band-top"></div>
+      <button id="v-close" type="button" aria-label="Close">×</button>
+      <div class="v-pad">
+        <span id="v-tag"></span>
+        <h2 id="v-title"></h2>
+        <p id="v-sub"></p>
+        <div id="v-body"></div>
+        <div class="v-bar">
+          <button id="v-prev" type="button" aria-label="Previous story">←</button>
+          <button id="v-next" type="button" aria-label="Next story">→</button>
+          <span class="sp"></span>
+          <button id="v-like" type="button" aria-label="Like">♥</button>
+          <button id="v-share" type="button" aria-label="Copy link">LINK</button>
         </div>
-
-      <div id="modal-scroll-panel">
-        <button id="modal-close-trigger" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-
-        <div class="modal-header">
-          <span id="modal-story-tag"      class="story-tag"></span>
-          <h2   id="modal-story-title"    class="story-title"></h2>
-          <p    id="modal-story-subtitle" class="story-subtitle"></p>
-        </div>
-
-        <div class="modal-content-stream">
-          <div id="modal-story-body" class="story-body-text"></div>
-
-          <div class="modal-utility-bar">
-            <button class="utility-btn" id="modal-like-button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06
-                         a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78
-                         1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </button>
-            <button class="utility-btn" id="modal-share-button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                <polyline points="16 6 12 2 8 6"/>
-                <line x1="12" y1="2" x2="12" y2="15"/>
-              </svg>
-            </button>
-          </div>
-
-
-              </div>
-            </div>
-          </div>
+        <div class="v-weave">
+          <p>54 dân tộc, mỗi sợi chỉ là một câu chuyện cùng dệt nên một tấm thổ cẩm.</p>
+          <div id="v-threads"></div>
         </div>
       </div>
-
-    </div>
+      <div class="v-band" id="v-band-bot"></div>
+    </aside>
   </div>
 
   <script src="splash.js"></script>
-  <script src="infinite-canvas2.js"></script>
+  <script src="images/manifest.js"></script><!-- generated by tools/build-images.mjs; optional -->
+  <script src="stream/stories.js"></script>
+  <script src="stream/images.js"></script>
+  <script src="stream/layout.js"></script>
+  <script src="stream/flow.js"></script>
+  <script src="stream/gl.js"></script>
+  <script src="stream/dom.js"></script>
+  <script src="stream/weave.js"></script>
+  <script src="menu.js"></script>
+  <script src="stream/viewer.js"></script>
+  <script src="stream/main.js"></script>
 </body>
 </html>

@@ -15,6 +15,12 @@
   /* ── Detect mobile ────────────────────────────────────────────── */
   const isMobile = () => window.innerWidth <= 768;
 
+  /* ── View state: logo intro  ·  #map view  ·  gallery ────────── */
+  let introReady = false;   // logo assembled → nav (GALLERY / MAP) is live
+  let introBuilt = false;   // splash tiles have been built at least once
+  let entering   = false;   // gallery exit animation in progress
+  let mapOn      = false;   // #map view is showing
+
   /* ── Z values ─────────────────────────────────────────────────── */
   function randomFarZ() {
     // Must stay well under the CSS perspective value (2600px desktop /
@@ -123,13 +129,14 @@
     if (onComplete) setTimeout(onComplete, 950);
   }
 
-  /* ── Phase 3: Show enter button ───────────────────────────────── */
-  function showEnterButton() {
-    const btn = document.getElementById('splash-enter-btn');
-    if (!btn) return;
-    btn.style.transition = 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.16,1,0.3,1)';
-    btn.style.opacity    = '1';
-    btn.style.transform  = 'translate(-50%, 0px)';
+  /* ── Phase 3: intro finished — the nav (GALLERY / MAP) goes live ── */
+  function markIntroReady() {
+    introReady = true;
+    const logo = document.getElementById('splash-logo-full');
+    if (logo) {                                            // the logo is now the way into the menu
+      logo.classList.add('is-ready');
+      logo.tabIndex = 0; logo.setAttribute('role', 'button'); logo.setAttribute('aria-label', 'Mở menu SẮC');
+    }
   }
 
 /* ── Fall-Toward-Viewer Flight — built from scratch ───────────────
@@ -253,69 +260,162 @@
     }, 500);
   }
 
-function wireEnterBtn() {
-    const btn      = document.getElementById('splash-enter-btn');
+  /* ── GALLERY (nav): halftone dissolves, tiles fall toward the viewer,
+         then the gallery is revealed (same motion the old big button used) ── */
+  function enterGalleryFromIntro() {
     const logoFull = document.getElementById('splash-logo-full');
     const grid     = document.getElementById('splash-grid');
     const halftone = document.getElementById('splash-halftone');
-    if (!btn) return;
 
-    if (btn.dataset.wired === 'true') return;
-    btn.dataset.wired = 'true';
+    entering = true;
+    disableLogoParallax();
 
-    btn.addEventListener('click', () => {
-      btn.style.pointerEvents = 'none';
-      disableLogoParallax();
+    // Step 1: dissolve the halftone field first, on its own.
+    const HALFTONE_FADE_MS = 500;
+    if (halftone) {
+      halftone.style.transition = `opacity ${HALFTONE_FADE_MS}ms ease`;
+      halftone.style.opacity    = '0';
+    }
 
-      // Fade out the button immediately
-      btn.style.transition = 'opacity 0.2s ease';
-      btn.style.opacity    = '0';
-
-      // ── Step 1: dissolve the halftone field FIRST, on its own ──
-      // Explicit duration we control directly, rather than relying
-      // on whatever transition is declared elsewhere in CSS.
-      const HALFTONE_FADE_MS = 500;
-      if (halftone) {
-        halftone.style.transition = `opacity ${HALFTONE_FADE_MS}ms ease`;
-        halftone.style.opacity    = '0';
+    // Step 2: once the halftone has fully dissolved, split the logo into tiles.
+    setTimeout(() => {
+      if (logoFull) {
+        logoFull.style.transition = 'opacity 0.2s ease';
+        logoFull.style.opacity    = '0';
       }
-
-      // ── Step 2: only after the halftone has FULLY finished
-      // dissolving do we touch the logo or split it into tiles. ──
-      setTimeout(() => {
-        if (logoFull) {
-          logoFull.style.transition = 'opacity 0.2s ease';
-          logoFull.style.opacity    = '0';
-        }
-
-        // Grid container was left at opacity:0 + blur(6px) by
-        // runCrossfade — restore it now, right before the tiles
-        // need to become visible and fall toward the viewer.
-        if (grid) {
-          grid.style.transition = 'opacity 0.2s ease, filter 0.2s ease';
-          grid.style.filter     = 'blur(0px)';
-          grid.style.opacity    = '1';
-        }
-
-        setTimeout(() => {
-          runFallToward(revealCanvas);
-        }, 220);
-      }, HALFTONE_FADE_MS);
-    });
+      // Grid container was left at opacity:0 + blur by runCrossfade — restore it.
+      if (grid) {
+        grid.style.transition = 'opacity 0.2s ease, filter 0.2s ease';
+        grid.style.filter     = 'blur(0px)';
+        grid.style.opacity    = '1';
+      }
+      setTimeout(() => { runFallToward(revealCanvas); }, 220);
+    }, HALFTONE_FADE_MS);
   }
-  /* ── Master sequence (first load) ────────────────────────────── */
-  function startSequence() {
+
+  /* ── #map view (map.js draws it; this file only switches views) ── */
+  const MAP_HASH = /^#map(-|$)/;
+
+  function clearHash() {
+    try { history.replaceState(null, '', window.location.pathname + window.location.search); }
+    catch (_) { /* sandboxed contexts */ }
+  }
+
+  function openMap() {
+    const view     = document.getElementById('map-view');
+    const stage    = document.getElementById('splash-stage');
+    const halftone = document.getElementById('splash-halftone');
+    if (!view || !window.SacMap || mapOn) return;
+
+    mapOn = true;
+    disableLogoParallax();
+    if (stage)    { stage.style.transition = 'opacity 0.35s ease'; stage.style.opacity = '0'; stage.style.pointerEvents = 'none'; }
+    if (halftone) { halftone.style.transition = 'opacity 0.35s ease'; halftone.style.opacity = '0'; }
+
+    setTimeout(() => {
+      if (!mapOn) return;
+      view.classList.add('is-on');
+      window.SacMap.show();
+    }, introBuilt ? 350 : 0);
+  }
+
+  // Back to the logo intro (nav "← Giới thiệu", browser Back)
+  function closeMap() {
+    const view     = document.getElementById('map-view');
+    const stage    = document.getElementById('splash-stage');
+    const halftone = document.getElementById('splash-halftone');
+    if (!mapOn) return;
+
+    mapOn = false;
+    if (view) view.classList.remove('is-on');
+    if (window.SacMap) window.SacMap.hide();
+    if (stage)    { stage.style.transition = 'opacity 0.4s ease'; stage.style.opacity = '1'; stage.style.pointerEvents = ''; }
+    if (halftone) { halftone.style.transition = 'opacity 0.6s ease'; halftone.style.opacity = ''; }
+
+    if (!introBuilt) { runIntro(); return; }   // arrived straight on #map: play the intro now
+    if (introReady) enableLogoParallax();
+  }
+
+  // GALLERY pressed while the map is open: fade the splash (map included) out
+  function leaveMapToGallery() {
+    const view = document.getElementById('map-view');
+    if (!mapOn) return;
+    mapOn    = false;
+    entering = true;
+    clearHash();
+    revealCanvas();
+    setTimeout(() => {
+      if (view) view.classList.remove('is-on');
+      if (window.SacMap) window.SacMap.hide();
+    }, 560);
+  }
+
+  function route() {
+    if (MAP_HASH.test(window.location.hash)) {
+      if (!mapOn && !entering) openMap();
+    } else if (mapOn) {
+      closeMap();
+    }
+  }
+
+  function wireNav() {
+    const logo = document.getElementById('splash-logo-full');
+    const back = document.getElementById('map-back');
+    if (!logo || logo.dataset.wired === 'true') return;
+    logo.dataset.wired = 'true';
+
+    // Click the SẮC logo → the screen darkens and the menu appears (menu.js).
+    // Until then the logo keeps tracing the cursor.
+    const openMenu = () => { if (introReady && !entering && !mapOn && window.SacMenu) window.SacMenu.open(); };
+    logo.addEventListener('click', openMenu);
+    logo.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMenu(); } });
+    if (back) back.addEventListener('click', () => { window.location.hash = ''; });
+    window.addEventListener('hashchange', route);
+  }
+
+  // what the menu can ask this file to do
+  window.SacSplash = {
+    pauseLogo:  disableLogoParallax,
+    resumeLogo: () => { if (introReady && !entering && !mapOn) enableLogoParallax(); },
+    gallery:    () => { if (mapOn) leaveMapToGallery(); else if (introReady && !entering) enterGalleryFromIntro(); },
+    map:        () => { if (!mapOn && introReady && !entering) window.location.hash = 'map'; },
+    view:       () => (mapOn ? 'map' : 'intro')
+  };
+
+  /* ── Deep link (#story-N): skip the intro, go straight to gallery ── */
+  function skipToGallery() {
+    const splash     = document.getElementById('splash-screen');
+    const canvasRoot = document.getElementById('canvas-root');
+    const macroBtn   = document.getElementById('macro-toggle-btn');
+    if (splash)     splash.style.display     = 'none';
+    if (canvasRoot) canvasRoot.style.display = 'block';
+    if (macroBtn)   macroBtn.style.display   = 'flex';
+  }
+
+  /* ── Logo intro (first load, and when returning from #map) ──── */
+  function runIntro() {
+    introReady = false;
+    introBuilt = true;
+    entering   = false;
     buildSplash();
 
     setTimeout(() => {
       runFlyIn(() => {
         runCrossfade(() => {
-          showEnterButton();
-          wireEnterBtn();
+          markIntroReady();
           enableLogoParallax();
         });
       });
     }, 200);
+  }
+
+  /* ── Master sequence (first load) ────────────────────────────── */
+  function startSequence() {
+    wireNav();
+    const hash = window.location.hash;
+    if (/^#story-\d+$/.test(hash)) { skipToGallery(); return; }   // shared story link
+    if (MAP_HASH.test(hash))        { openMap();       return; }   // shared map link
+    runIntro();
   }
 
   /* ── Public replay hook — called from the HOME button on the
@@ -331,7 +431,6 @@ function wireEnterBtn() {
     const canvasRoot  = document.getElementById('canvas-root');
     const macroBtn    = document.getElementById('macro-toggle-btn');
     const logoFull    = document.getElementById('splash-logo-full');
-    const btn         = document.getElementById('splash-enter-btn');
     const grid        = document.getElementById('splash-grid');
     const halftone    = document.getElementById('splash-halftone');
 
@@ -344,10 +443,12 @@ function wireEnterBtn() {
     logoFull.style.opacity    = '0';
     logoFull.style.filter     = 'blur(0px)';
 
-    btn.style.transition    = 'none';
-    btn.style.opacity       = '0';
-    btn.style.transform     = 'translate(-50%, 12px)';
-    btn.style.pointerEvents = '';
+    introReady = false;
+    introBuilt = true;
+    entering   = false;
+    logoFull.classList.remove('is-ready'); logoFull.removeAttribute('tabindex'); logoFull.removeAttribute('role');
+    const stage = document.getElementById('splash-stage');
+    if (stage) { stage.style.transition = 'none'; stage.style.opacity = '1'; stage.style.pointerEvents = ''; }
 
     grid.style.transition = 'none';
     grid.style.opacity    = '0';   // tiles rebuilt invisible anyway, but
@@ -398,8 +499,7 @@ if (halftone) {
         setTimeout(() => {
           runFlyIn(() => {
             runCrossfade(() => {
-              showEnterButton();
-              wireEnterBtn();
+              markIntroReady();
               enableLogoParallax();
             });
           });
